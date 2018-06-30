@@ -21,6 +21,8 @@
 package cmd
 
 import (
+	"log"
+
 	"github.com/koalakit/psdui"
 
 	"github.com/spf13/cobra"
@@ -42,7 +44,13 @@ var previewCmd = &cobra.Command{
 			outputDir = args[1]
 		}
 
-		psdui.ExportPreview(args[0], outputDir)
+		var err error
+		if err = psdui.ExportPreview(args[0], outputDir); err != nil {
+			log.Fatal(err)
+			return
+		}
+
+		// fmt.Printf("psd review (width:%d:height:%d)", )
 	},
 }
 

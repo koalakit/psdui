@@ -23,7 +23,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/koalakit/psdui/internal/version"
+	"github.com/koalakit/psdui"
 
 	"github.com/spf13/cobra"
 )
@@ -34,7 +34,7 @@ var versionCmd = &cobra.Command{
 	Short: "PSDUI 版本",
 	Long:  `PSDUI 版本`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println(version.String("psdui"))
+		fmt.Println(psdui.VersionString("psdui"))
 	},
 }
 
