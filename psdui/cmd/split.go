@@ -21,7 +21,9 @@
 package cmd
 
 import (
-	"fmt"
+	"log"
+
+	"github.com/koalakit/psdui"
 
 	"github.com/spf13/cobra"
 )
@@ -32,7 +34,12 @@ var splitCmd = &cobra.Command{
 	Short: "切分图素",
 	Long:  `切分图素`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("split called")
+		var err error
+
+		parser := psdui.NewPSDParser()
+		if err = parser.Load(args[0]); err != nil {
+			log.Fatal(args[0], err)
+		}
 	},
 }
 
