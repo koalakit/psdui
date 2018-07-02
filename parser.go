@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/oov/psd"
 )
@@ -15,24 +14,17 @@ type PSDParser struct {
 	ImagePSD   *psd.PSD
 	Width      int
 	Height     int
-}
-
-// NameProperty 名称属性
-type NameProperty struct {
-	Name       string
-	Type       string
-	Attributes map[string]string
+	Nodes      []*UINode
 }
 
 // Load 载入PSD文件
-func (parser *PSDParser) Load(sourceFile string) error {
+func (parser *PSDParser) Load(sourceFile string) (err error) {
 	parser.SourceFile = sourceFile
 
-	var err error
 	var file *os.File
 	file, err = os.Open(sourceFile)
 	if err != nil {
-		return err
+		return
 	}
 	defer file.Close()
 
@@ -40,7 +32,7 @@ func (parser *PSDParser) Load(sourceFile string) error {
 		SkipMergedImage: true,
 	})
 	if err != nil {
-		return err
+		return
 	}
 
 	config := parser.ImagePSD.Config
@@ -50,132 +42,88 @@ func (parser *PSDParser) Load(sourceFile string) error {
 	fullpath, _ := filepath.Abs(sourceFile)
 	fmt.Printf("%s(%d:%d)\n", fullpath, parser.Width, parser.Height)
 
-	return parser.parse()
+	err = parser.parse()
+	return
 }
 
 // 解析图层
-func (parser *PSDParser) parse() error {
-	var err error
-
+func (parser *PSDParser) parse() (err error) {
+	parser.Nodes = make([]*UINode, 0)
 	for _, layer := range parser.ImagePSD.Layer {
-		if err = parser.processLayer(&layer); err != nil {
-			panic(err)
+		node := parser.processLayer(nil, &layer)
+		if node != nil {
+			parser.Nodes = append(parser.Nodes, node)
 		}
 	}
 
 	return err
 }
 
-func (parser *PSDParser) processLayer(layer *psd.Layer) error {
+func (parser *PSDParser) processLayer(parent *UINode, layer *psd.Layer) *UINode {
 	name := layer.Name
-	_, ok := parser.parseName(name)
-	if ok {
-		// fmt.Printf("LAYER: %s %v:%v\n", name, layer.Rect.Dx(), layer.Rect.Dy())
+	node := ParseNode(name)
+
+	var subParent *UINode
+	subParent = parent
+
+	if node != nil {
+		node.SetLayer(layer)
+		node.ImagePSD = parser.ImagePSD
+		subParent = node
 	}
 
-	var err error
+	for _, subLayer := range layer.Layer {
+		parser.processLayer(subParent, &subLayer)
+	}
 
-	if len(layer.Layer) > 0 {
-		for _, subLayer := range layer.Layer {
-			if err = parser.processLayer(&subLayer); err != nil {
-				return err
-			}
+	if node != nil {
+		if parent != nil {
+			parent.AddChild(*node)
 		}
 	}
 
-	return nil
-}
-
-// 如果不包含@字符则返回false，直接跳过
-func (parser *PSDParser) parseName(name string) (property NameProperty, ok bool) {
-	ok = false
-
-	if len(name) <= 0 {
-		return
-	}
-
-	// 解析名称类型
-	typeIdx := strings.Index(name, "@")
-	if typeIdx < 0 {
-		return
-	}
-
-	if typeIdx+1 >= len(name) {
-		fmt.Printf("[ERROR] 图层[%v] 字符@后必须定义类型\n", name)
-		return
-	}
-
-	elementName := name[:typeIdx]
-	typeIdx++
-	elementType := name[typeIdx:]
-	var elementAttrs string
-
-	attrIdx := strings.Index(elementType, ":")
-	if attrIdx == 0 {
-		fmt.Printf("[ERROR] 图层[%v] 字符@后必须定义类型\n", name)
-		return
-	} else if attrIdx < 0 {
-		elementType = name[typeIdx:]
-	} else {
-		elementType = name[typeIdx : typeIdx+attrIdx]
-		elementAttrs = name[typeIdx+attrIdx:]
-	}
-
-	property.Name = elementName
-	property.Type = elementType
-
-	// 属性定义是否合法
-	if len(elementAttrs) == 1 {
-		fmt.Printf("[ERROR] 图层[%v] 类型后需要添加属性，如没有自定义属性请去掉类型后的“:”符号\n", name)
-		return
-	}
-
-	// 解析属性
-	if len(elementAttrs) > 0 {
-		elementAttrs = elementAttrs[1:]
-	}
-
-	ok = true
-
-	// 解析属性
-	property.Attributes = parser.parseAttributes(name, elementAttrs)
-
-	fmt.Printf("%+v\n", property)
-	return
-}
-
-func (parser *PSDParser) parseAttributes(name string, str string) map[string]string {
-	if len(str) <= 0 {
-		return nil
-	}
-
-	attributes := make(map[string]string)
-
-	str1 := strings.Split(str, ";")
-	leftBracket := 0
-	rightBracket := 0
-	for _, v := range str1 {
-		leftBracket = strings.Index(v, "(")
-		if leftBracket < 0 {
-			// 有默认值
-			attributes[v] = ""
-			continue
-		}
-
-		rightBracket = strings.Index(v, ")")
-		if rightBracket < 0 {
-			fmt.Printf("[ERROR] 图层[%v] 属性值的括号必须匹配\n", name)
-			continue
-		}
-
-		attributes[v[:leftBracket]] = v[leftBracket+1 : rightBracket]
-	}
-
-	return attributes
+	return node
 }
 
 // NewPSDParser 分析PSD解析器
 func NewPSDParser() *PSDParser {
 	parser := new(PSDParser)
+	return parser
+}
+
+// IParser 解析器接口类
+type IParser interface {
+	Parse(node *UINode, layer *psd.Layer) *UIAst
+}
+
+// WidgetParser 控件解析基类
+type WidgetParser struct {
+	X      int
+	Y      int
+	Width  int
+	Height int
+}
+
+// Parse 解析图层
+func (w *WidgetParser) Parse(node *UINode, layer *psd.Layer) error {
+	return nil
+}
+
+var (
+	_parserFactories = make(map[string]IParser)
+)
+
+// RegisterParser 注册解析类
+func RegisterParser(name string, parser IParser) {
+	_parserFactories[name] = parser
+}
+
+// NewWidgetParser 分配新控件解析器
+func NewWidgetParser(typ string) IParser {
+	parser, ok := _parserFactories[typ]
+	if !ok {
+		return nil
+	}
+
 	return parser
 }

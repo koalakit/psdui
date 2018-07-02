@@ -25,6 +25,7 @@ import (
 
 	"github.com/koalakit/psdui"
 
+	_ "github.com/koalakit/psdui/egret"
 	"github.com/spf13/cobra"
 )
 
@@ -37,8 +38,13 @@ var splitCmd = &cobra.Command{
 		var err error
 
 		parser := psdui.NewPSDParser()
-		if err = parser.Load(args[0]); err != nil {
+		err = parser.Load(args[0])
+		if err != nil {
 			log.Fatal(args[0], err)
+		}
+
+		for _, v := range parser.Nodes {
+			psdui.Export(v, "egret", args[1])
 		}
 	},
 }
