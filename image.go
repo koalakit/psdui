@@ -1,22 +1,16 @@
 package psdui
 
-import (
-	"fmt"
+// // ImageParser 图片解析类
+// type ImageParser struct {
+// 	WidgetParser
+// }
 
-	"github.com/oov/psd"
-)
+// // Parse 解析图层
+// func (p *ImageParser) Parse(node *UINode, layer *psd.Layer) *UIAst {
+// 	fmt.Println("ImageParser:", layer.Name)
+// 	return nil
+// }
 
-// ImageParser 图片解析类
-type ImageParser struct {
-	WidgetParser
-}
-
-// Parse 解析图层
-func (p *ImageParser) Parse(node *UINode, layer *psd.Layer) *UIAst {
-	fmt.Println("ImageParser:", layer.Name)
-	return nil
-}
-
-func init() {
-	RegisterParser("Image", new(ImageParser))
-}
+// func init() {
+// 	RegisterParser("Image", new(ImageParser))
+// }

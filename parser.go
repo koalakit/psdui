@@ -28,9 +28,8 @@ func (parser *PSDParser) Load(sourceFile string) (err error) {
 	}
 	defer file.Close()
 
-	parser.ImagePSD, _, err = psd.Decode(file, &psd.DecodeOptions{
-		SkipMergedImage: true,
-	})
+	// var options psd.DecodeOptions
+	parser.ImagePSD, _, err = psd.Decode(file, nil)
 	if err != nil {
 		return
 	}
@@ -49,7 +48,8 @@ func (parser *PSDParser) Load(sourceFile string) (err error) {
 // 解析图层
 func (parser *PSDParser) parse() (err error) {
 	parser.Nodes = make([]*UINode, 0)
-	for _, layer := range parser.ImagePSD.Layer {
+	for _, v := range parser.ImagePSD.Layer {
+		layer := v
 		node := parser.processLayer(nil, &layer)
 		if node != nil {
 			parser.Nodes = append(parser.Nodes, node)
@@ -72,7 +72,8 @@ func (parser *PSDParser) processLayer(parent *UINode, layer *psd.Layer) *UINode 
 		subParent = node
 	}
 
-	for _, subLayer := range layer.Layer {
+	for _, v := range layer.Layer {
+		subLayer := v
 		parser.processLayer(subParent, &subLayer)
 	}
 
@@ -91,39 +92,39 @@ func NewPSDParser() *PSDParser {
 	return parser
 }
 
-// IParser 解析器接口类
-type IParser interface {
-	Parse(node *UINode, layer *psd.Layer) *UIAst
-}
+// // IParser 解析器接口类
+// type IParser interface {
+// 	Parse(node *UINode, layer *psd.Layer) *UIAst
+// }
 
-// WidgetParser 控件解析基类
-type WidgetParser struct {
-	X      int
-	Y      int
-	Width  int
-	Height int
-}
+// // WidgetParser 控件解析基类
+// type WidgetParser struct {
+// 	X      int
+// 	Y      int
+// 	Width  int
+// 	Height int
+// }
 
-// Parse 解析图层
-func (w *WidgetParser) Parse(node *UINode, layer *psd.Layer) error {
-	return nil
-}
+// // Parse 解析图层
+// func (w *WidgetParser) Parse(node *UINode, layer *psd.Layer) error {
+// 	return nil
+// }
 
-var (
-	_parserFactories = make(map[string]IParser)
-)
+// var (
+// 	_parserFactories = make(map[string]IParser)
+// )
 
-// RegisterParser 注册解析类
-func RegisterParser(name string, parser IParser) {
-	_parserFactories[name] = parser
-}
+// // RegisterParser 注册解析类
+// func RegisterParser(name string, parser IParser) {
+// 	_parserFactories[name] = parser
+// }
 
-// NewWidgetParser 分配新控件解析器
-func NewWidgetParser(typ string) IParser {
-	parser, ok := _parserFactories[typ]
-	if !ok {
-		return nil
-	}
+// // NewWidgetParser 分配新控件解析器
+// func NewWidgetParser(typ string) IParser {
+// 	parser, ok := _parserFactories[typ]
+// 	if !ok {
+// 		return nil
+// 	}
 
-	return parser
-}
+// 	return parser
+// }

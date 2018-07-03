@@ -22,6 +22,7 @@ package cmd
 
 import (
 	"log"
+	"path/filepath"
 
 	"github.com/koalakit/psdui"
 
@@ -44,7 +45,12 @@ var splitCmd = &cobra.Command{
 		}
 
 		for _, v := range parser.Nodes {
-			psdui.Export(v, "egret", args[1])
+			absPath, err := filepath.Abs(args[1])
+			if err != nil {
+				log.Fatal("输出路径出错:", err)
+			}
+
+			psdui.Export(v, "egret", absPath)
 		}
 	},
 }

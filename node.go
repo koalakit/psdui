@@ -2,6 +2,7 @@ package psdui
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/oov/psd"
@@ -75,10 +76,6 @@ func (node *UINode) parse(name string) (ok bool) {
 	// 解析属性
 	node.Attributes = node.parseAttributes(name, elementAttrs)
 
-	for n, attr := range node.Attributes {
-		fmt.Printf("NAME: %v:%v\n", n, attr)
-	}
-
 	return
 }
 
@@ -107,7 +104,6 @@ func (node *UINode) parseAttributes(name string, str string) map[string]IAttribu
 			continue
 		}
 
-		// attributes[v[:leftBracket]] = v[leftBracket+1 : rightBracket]
 		attrName := v[:leftBracket]
 		attrValue := v[leftBracket+1 : rightBracket]
 
@@ -128,6 +124,21 @@ func (node *UINode) parseAttributes(name string, str string) map[string]IAttribu
 	return attributes
 }
 
+// Attr 获取属性
+func (node *UINode) Attr(out IAttribute) bool {
+	attr, ok := node.Attributes[out.Name()]
+	if !ok {
+		return false
+	}
+
+	value := reflect.ValueOf(attr).Elem()
+	outValue := reflect.ValueOf(out).Elem()
+	outValue.Set(value)
+
+	return true
+}
+
+// SetLayer 设置psd图层
 func (node *UINode) SetLayer(layer *psd.Layer) {
 	node.Layer = layer
 	if layer != nil {
@@ -135,11 +146,13 @@ func (node *UINode) SetLayer(layer *psd.Layer) {
 	}
 }
 
+// AddChild 添加子节点
 func (node *UINode) AddChild(child UINode) {
 	node.Children = append(node.Children, child)
 	child.Parent = node
 }
 
+// RemoveChild 删除子节点
 func (node *UINode) RemoveChild(child UINode) {
 	if len(node.Children) <= 0 {
 		return
@@ -156,6 +169,7 @@ func (node *UINode) RemoveChild(child UINode) {
 	}
 }
 
+// RemoveSelf 从父节点删除自身
 func (node *UINode) RemoveSelf() {
 	if node.Parent != nil {
 		node.Parent.RemoveChild(*node)
@@ -170,4 +184,35 @@ func ParseNode(name string) *UINode {
 	}
 
 	return nil
+}
+
+// IAttribute 属性接口
+type IAttribute interface {
+	Parse(v string) error
+	Name() string
+}
+
+var (
+	_attributeFactories = make(map[string]reflect.Type)
+)
+
+// RegisterAttribute 注册属性
+func RegisterAttribute(attr IAttribute) {
+	_attributeFactories[attr.Name()] = reflect.ValueOf(attr).Elem().Type()
+}
+
+// NewAttribute 通过名称分配新属性
+func NewAttribute(name string) IAttribute {
+	attrType, ok := _attributeFactories[name]
+	if !ok {
+		return nil
+	}
+
+	attrValue := reflect.New(attrType)
+	attr, ok := attrValue.Interface().(IAttribute)
+	if !ok {
+		return nil
+	}
+
+	return attr
 }

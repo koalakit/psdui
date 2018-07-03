@@ -1,23 +1,40 @@
 {
-	"groups":[
-	{
-		"keys":"bg_jpg,egret_icon_png,description_json",
-		"name":"preload"
-	}],
-	"resources":[
-	{
-		"name":"bg_jpg",
-		"type":"image",
-		"url":"assets/bg.jpg"
-	},
-	{
-		"name":"egret_icon_png",
-		"type":"image",
-		"url":"assets/egret_icon.png"
-	},
-	{
-		"name":"description_json",
-		"type":"json",
-		"url":"config/description.json"
-	}]
+	"groups": [
+		{
+			"keys": "egret_icon_png,区域_png,按下_png,测试文本_png,背景_png,默认_png",
+			"name": "preload"
+		}
+	],
+	"resources": [
+		{
+			"name": "egret_icon_png",
+			"type": "image",
+			"url": "assets/egret_icon.png"
+		},
+		{
+			"name": "区域_png",
+			"type": "image",
+			"url": "assets/ui/区域.png"
+		},
+		{
+			"name": "按下_png",
+			"type": "image",
+			"url": "assets/ui/按下.png"
+		},
+		{
+			"name": "测试文本_png",
+			"type": "image",
+			"url": "assets/ui/测试文本.png"
+		},
+		{
+			"name": "背景_png",
+			"type": "image",
+			"url": "assets/ui/背景.png"
+		},
+		{
+			"name": "默认_png",
+			"type": "image",
+			"url": "assets/ui/默认.png"
+		}
+	]
 }
