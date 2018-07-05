@@ -20,6 +20,9 @@ const (
 	ExportName = "导出"
 	// Scale9GridName 九宫格属性名称
 	Scale9GridName = "九宫格"
+
+	// MinSizeName 最小尺寸属性
+	MinSizeName = "最小尺寸"
 )
 
 // IAttributeXML 属性输出到xml
